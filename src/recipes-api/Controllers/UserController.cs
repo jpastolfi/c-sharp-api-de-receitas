@@ -25,12 +25,7 @@ public class UserController : ControllerBase
     public IActionResult Get(string email)
     {                
         User requestedUser = _service.GetUser(email);
-        if (requestedUser == null)
-        {
-            return NotFound();
-        }
-        
-        return Ok(requestedUser);
+        return IsUserValid(email, Ok(requestedUser));
     }
 
     // 7 - Sua aplicação deve ter o endpoint POST /user
@@ -46,11 +41,11 @@ public class UserController : ControllerBase
     public IActionResult Update(string email, [FromBody]User user)
     {
         try {
-            User requestedUser = _service.GetUser(email);
-            if (requestedUser == null)
-                return NotFound();
             if (email != user.Email)
                 return BadRequest();
+            User requestedUser = _service.GetUser(email);
+            if (!IsUserValid(email))
+                return NotFound();
             _service.UpdateUser(user);
             return Ok(user);
         } catch {
@@ -62,6 +57,22 @@ public class UserController : ControllerBase
     [HttpDelete("{email}")]
     public IActionResult Delete(string email)
     {
-        throw new NotImplementedException();
+        /* if (!IsUserValid(email))
+            return NotFound();
+        _service.DeleteUser(email); */
+        User requestedUser = _service.GetUser(email);
+        if (requestedUser == null)
+            return NotFound();
+        _service.DeleteUser(email);
+        return NoContent();
     } 
+
+    public bool IsUserValid(string email)
+    {
+        return _service.GetUser(email) != null;
+    }
+    public IActionResult IsUserValid(string email, IActionResult action)
+    {
+        return _service.GetUser(email) == null ? NotFound() : action;
+    }
 }
